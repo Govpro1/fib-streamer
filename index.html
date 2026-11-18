@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Fibonacci Streamer</title>
+
+    <!-- iOS Home Screen Web App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Fib Stream" />
+    <meta name="theme-color" content="#007aff" />
+
+    <link rel="apple-touch-icon" href="./icon-180.png" />
+    <link rel="icon" type="image/png" href="./icon-180.png" />
+    <link rel="manifest" href="./manifest.json" />
+
+    <style>
+        :root {
+            --bg: #f2f2f7;
+            --card: #ffffff;
+            --text: #1c1c1e;
+            --muted: #6e6e73;
+            --accent: #007aff;
+            --danger: #ff3b30;
+            --success: #34c759;
+            --border: #e5e5ea;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #000000;
+                --card: #1c1c1e;
+                --text: #f2f2f7;
+                --muted: #98989d;
+                --accent: #0a84ff;
+                --danger: #ff453a;
+                --success: #30d158;
+                --border: #2c2c2e;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: calc(20px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 0;
+        }
+
+        .offline-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: var(--bg);
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+
+        .offline-badge.ready {
+            color: var(--success);
+            border-color: var(--success);
+        }
+
+        h2 {
+            font-size: 17px;
+            margin: 0 0 6px;
+        }
+
+        p.subtitle {
+            margin: 0 0 18px;
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            font-size: 18px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            margin-bottom: 12px;
+            -webkit-appearance: none;
+        }
+
+        .presets {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            flex: 1;
+            min-width: 70px;
+            padding: 8px 6px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        button.primary, button.secondary {
+            flex: 1;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        button.primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        button.secondary {
+            background: var(--bg);
+            color: var(--accent);
+            border: 1px solid var(--border);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        button.cancel {
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            background: var(--danger);
+            color: #fff;
+            cursor: pointer;
+            display: none;
+        }
+
+        .progress-wrap {
+            display: none;
+            margin-bottom: 16px;
+        }
+
+        progress {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            overflow: hidden;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        progress::-webkit-progress-bar {
+            background: var(--bg);
+            border-radius: 999px;
+        }
+
+        progress::-webkit-progress-value {
+            background: var(--accent);
+            border-radius: 999px;
+        }
+
+        .status {
+            font-size: 14px;
+            color: var(--muted);
+            margin-top: 8px;
+            min-height: 20px;
+        }
+
+        .status.error {
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .preview-box {
+            display: none;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+            word-break: break-all;
+            line-height: 1.45;
+        }
+
+        .preview-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        a.download-btn {
+            display: none;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            background: var(--success);
+            color: #fff;
+        }
+
+        .install-tip {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+
+        /* Test Runner Styles */
+        .test-list {
+            list-style: none;
+            padding: 0;
+            margin: 14px 0 0;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .test-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--bg);
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .test-badge {
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .test-pass {
+            color: var(--success);
+        }
+
+        .test-fail {
+            color: var(--danger);
+        }
+
+        .test-summary {
+            margin-top: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #runTestsBtn {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Calculator Card -->
+    <div class="container">
+        <div class="header-row">
+            <h1>Fibonacci Streamer</h1>
+            <span class="offline-badge" id="offlineBadge">Web Mode</span>
+        </div>
+        <p class="subtitle">Computes arbitrary-precision Fibonacci numbers in a background Web Worker without freezing Safari.</p>
+
+        <label for="fibInput">Fibonacci Index (n)</label>
+        <input type="number" id="fibInput" value="1000000" min="0" max="100000000" inputmode="numeric" />
+
+        <div class="presets">
+            <button type="button" class="preset-btn" data-val="10000">10K</button>
+            <button type="button" class="preset-btn" data-val="100000">100K</button>
+            <button type="button" class="preset-btn" data-val="1000000">1M</button>
+            <button type="button" class="preset-btn" data-val="10000000">10M</button>
+        </div>
+
+        <div class="actions">
+            <button type="button" id="startBtn" class="primary">Calculate &amp; Prepare File</button>
+            <button type="button" id="cancelBtn" class="cancel">Stop</button>
+        </div>
+
+        <div class="progress-wrap" id="progressWrap">
+            <progress id="progressBar" value="0" max="100"></progress>
+            <div class="status" id="statusText">Ready</div>
+        </div>
+
+        <div class="preview-box" id="previewBox">
+            <div class="preview-label" id="previewStats">Preview</div>
+            <div id="previewText"></div>
+        </div>
+
+        <a id="downloadLink" class="download-btn" download="fibonacci_output.txt">Download .TXT File</a>
+
+        <div class="install-tip" id="installTip">
+            Tip: To install on your iPhone Home Screen, host over HTTPS (e.g., GitHub Pages), open in Safari, tap <strong>Share</strong>, and select <strong>Add to Home Screen</strong>. After it has loaded once online, it will work in Airplane Mode.
+        </div>
+    </div>
+
+    <!-- Built-In Unit Test Suite Card -->
+    <div class="container">
+        <h2>Unit Test Suite</h2>
+        <p class="subtitle">Checks the Fibonacci engine against known values, including F(0), F(1), F(10), and F(100).</p>
+        <button type="button" id="runTestsBtn" class="secondary">Run Tests</button>
+        <ul class="test-list" id="testList"></ul>
+        <div class="test-summary" id="testSummary"></div>
+    </div>
+
+    <script>
+        (function () {
+            const fibInput = document.getElementById("fibInput");
+            const startBtn = document.getElementById("startBtn");
+            const cancelBtn = document.getElementById("cancelBtn");
+            const progressWrap = document.getElementById("progressWrap");
+            const progressBar = document.getElementById("progressBar");
+            const statusText = document.getElementById("statusText");
+            const previewBox = document.getElementById("previewBox");
+            const previewStats = document.getElementById("previewStats");
+            const previewText = document.getElementById("previewText");
+            const downloadLink = document.getElementById("downloadLink");
+            const offlineBadge = document.getElementById("offlineBadge");
+            const runTestsBtn = document.getElementById("runTestsBtn");
+            const testList = document.getElementById("testList");
+            const testSummary = document.getElementById("testSummary");
+
+            const PREVIEW_CHARS = 80;
+            const KNOWN_TESTS = [
+                { name: "F(0) equals 0", n: 0, expected: "0" },
+                { name: "F(1) equals 1", n: 1, expected: "1" },
+                { name: "F(2) equals 1", n: 2, expected: "1" },
+                { name: "F(10) equals 55", n: 10, expected: "55" },
+                { name: "F(100) equals 354224848179261915075", n: 100, expected: "354224848179261915075" }
+            ];
+
+            let worker = null;
+            let running = false;
+            let swReady = false;
+            let downloadUrl = null;
+            let chunks = [];
+            let previewHead = "";
+            let previewTail = "";
+            let startedAt = 0;
+
+            function setStatus(message, isError) {
+                statusText.textContent = message;
+                statusText.classList.toggle("error", !!isError);
+            }
+
+            function updateBadge() {
+                if (!navigator.onLine) {
+                    offlineBadge.textContent = "Offline";
+                    offlineBadge.classList.toggle("ready", swReady);
+                    return;
+                }
+                if (swReady) {
+                    offlineBadge.textContent = "Offline Ready";
+                    offlineBadge.classList.add("ready");
+                    return;
+                }
+                offlineBadge.textContent = "Web Mode";
+                offlineBadge.classList.remove("ready");
+            }
+
+            function setRunning(isRunning) {
+                running = isRunning;
+                startBtn.disabled = isRunning;
+                startBtn.style.display = isRunning ? "none" : "block";
+                cancelBtn.style.display = isRunning ? "block" : "none";
+                document.querySelectorAll(".preset-btn").forEach(function (btn) {
+                    btn.disabled = isRunning;
+                });
+                fibInput.disabled = isRunning;
+                runTestsBtn.disabled = isRunning;
+            }
+
+            function revokeDownload() {
+                if (downloadUrl) {
+                    URL.revokeObjectURL(downloadUrl);
+                    downloadUrl = null;
+                }
+                downloadLink.style.display = "none";
+                downloadLink.removeAttribute("href");
+            }
+
+            function stopWorker() {
+                if (worker) {
+                    try { worker.postMessage({ type: "cancel" }); } catch (e) {}
+                    try { worker.terminate(); } catch (e) {}
+                    worker = null;
+                }
+            }
+
+            function formatPreview(head, tail, total, fullSmall) {
+                if (total <= PREVIEW_CHARS * 2) {
+                    return fullSmall;
+                }
+                return head + "\n…\n" + tail;
+            }
+
+            function startCalculation() {
+                const raw = fibInput.value.trim();
+                const n = Number(raw);
+                if (!Number.isInteger(n) || n < 0) {
+                    progressWrap.style.display = "block";
+                    setStatus("Enter a whole number that is 0 or greater.", true);
+                    return;
+                }
+                if (n > 100000000) {
+                    progressWrap.style.display = "block";
+                    setStatus("The largest index this page accepts is 100,000,000.", true);
+                    return;
+                }
+
+                stopWorker();
+                revokeDownload();
+                chunks = [];
+                previewHead = "";
+                previewTail = "";
+                startedAt = Date.now();
+
+                progressWrap.style.display = "block";
+                progressBar.value = 0;
+                previewBox.style.display = "none";
+                previewText.textContent = "";
+                setStatus("Starting worker…", false);
+                setRunning(true);
+
+                worker = new Worker("./worker.js");
+                worker.onerror = function (err) {
+                    setRunning(false);
+                    stopWorker();
+                    setStatus("Worker error: " + (err && err.message ? err.message : "unknown"), true);
+                };
+                worker.onmessage = function (event) {
+                    const msg = event.data || {};
+                    if (msg.type === "progress") {
+                        progressBar.value = msg.percent || 0;
+                        setStatus(msg.message || "Working…", false);
+                    } else if (msg.type === "chunk") {
+                        const data = msg.data || "";
+                        chunks.push(data);
+                        if (previewHead.length < PREVIEW_CHARS) {
+                            previewHead += data.slice(0, PREVIEW_CHARS - previewHead.length);
+                        }
+                        previewTail = (previewTail + data).slice(-PREVIEW_CHARS);
+                    } else if (msg.type === "done") {
+                        const elapsed = ((Date.now() - startedAt) / 1000).toFixed(2);
+                        const digitCount = msg.digitCount || chunks.reduce(function (sum, part) { return sum + part.length; }, 0);
+                        const blob = new Blob(chunks, { type: "text/plain" });
+                        downloadUrl = URL.createObjectURL(blob);
+                        downloadLink.href = downloadUrl;
+                        downloadLink.download = "fibonacci_F" + n + ".txt";
+                        downloadLink.style.display = "block";
+                        downloadLink.textContent = "Download F(" + n.toLocaleString() + ") — " + digitCount.toLocaleString() + " digits";
+
+                        previewBox.style.display = "block";
+                        previewStats.textContent = "F(" + n.toLocaleString() + ")  ·  " + digitCount.toLocaleString() + " digits  ·  " + elapsed + "s";
+                        previewText.textContent = formatPreview(previewHead, previewTail, digitCount, chunks.join(""));
+                        progressBar.value = 100;
+                        setStatus("Done. The file is ready to download.", false);
+                        setRunning(false);
+                        stopWorker();
+                        chunks = [];
+                    } else if (msg.type === "cancelled") {
+                        setStatus("Stopped.", false);
+                        setRunning(false);
+                        stopWorker();
+                    } else if (msg.type === "error") {
+                        setStatus(msg.message || "Calculation failed.", true);
+                        setRunning(false);
+                        stopWorker();
+                    }
+                };
+                worker.postMessage({ type: "start", n: n });
+            }
+
+            function cancelCalculation() {
+                stopWorker();
+                chunks = [];
+                setRunning(false);
+                setStatus("Stopped.", false);
+            }
+
+            function computeInWorker(n) {
+                return new Promise(function (resolve, reject) {
+                    const testWorker = new Worker("./worker.js");
+                    const parts = [];
+                    const timer = setTimeout(function () {
+                        testWorker.terminate();
+                        reject(new Error("Timed out"));
+                    }, 20000);
+                    testWorker.onerror = function (err) {
+                        clearTimeout(timer);
+                        testWorker.terminate();
+                        reject(new Error(err && err.message ? err.message : "Worker error"));
+                    };
+                    testWorker.onmessage = function (event) {
+                        const msg = event.data || {};
+                        if (msg.type === "chunk") parts.push(msg.data || "");
+                        if (msg.type === "done") {
+                            clearTimeout(timer);
+                            testWorker.terminate();
+                            resolve(parts.join(""));
+                        }
+                        if (msg.type === "error") {
+                            clearTimeout(timer);
+                            testWorker.terminate();
+                            reject(new Error(msg.message || "Calculation failed"));
+                        }
+                    };
+                    testWorker.postMessage({ type: "start", n: n });
+                });
+            }
+
+            function addTestItem(name, state, detail) {
+                const item = document.createElement("li");
+                item.className = "test-item";
+                const badge = document.createElement("span");
+                badge.className = "test-badge " + (state === "pass" ? "test-pass" : state === "fail" ? "test-fail" : "");
+                badge.textContent = state === "pass" ? "PASS" : state === "fail" ? "FAIL" : "…";
+                const body = document.createElement("div");
+                body.textContent = detail ? name + " — " + detail : name;
+                item.appendChild(badge);
+                item.appendChild(body);
+                testList.appendChild(item);
+                return { item: item, badge: badge, body: body };
+            }
+
+            async function runTests() {
+                if (running) return;
+                runTestsBtn.disabled = true;
+                testList.style.display = "flex";
+                testList.innerHTML = "";
+                testSummary.textContent = "Running tests…";
+                testSummary.style.color = "";
+
+                let passed = 0;
+                let failed = 0;
+
+                for (let i = 0; i < KNOWN_TESTS.length; i++) {
+                    const test = KNOWN_TESTS[i];
+                    const row = addTestItem(test.name, "running", "running");
+                    try {
+                        const got = await computeInWorker(test.n);
+                        if (got === test.expected) {
+                            row.badge.textContent = "PASS";
+                            row.badge.className = "test-badge test-pass";
+                            row.body.textContent = test.name;
+                            passed += 1;
+                        } else {
+                            row.badge.textContent = "FAIL";
+                            row.badge.className = "test-badge test-fail";
+                            row.body.textContent = test.name + " — expected " + test.expected + ", got " + got;
+                            failed += 1;
+                        }
+                    } catch (err) {
+                        row.badge.textContent = "FAIL";
+                        row.badge.className = "test-badge test-fail";
+                        row.body.textContent = test.name + " — " + (err && err.message ? err.message : String(err));
+                        failed += 1;
+                    }
+                }
+
+                testSummary.textContent = passed + " passed, " + failed + " failed";
+                testSummary.style.color = failed ? "var(--danger)" : "var(--success)";
+                runTestsBtn.disabled = false;
+            }
+
+            async function registerServiceWorker() {
+                if (!("serviceWorker" in navigator)) {
+                    updateBadge();
+                    return;
+                }
+                try {
+                    await navigator.serviceWorker.register("./sw.js");
+                    await navigator.serviceWorker.ready;
+                    if (!navigator.serviceWorker.controller) {
+                        await new Promise(function (resolve) {
+                            const timeout = setTimeout(resolve, 2500);
+                            navigator.serviceWorker.addEventListener("controllerchange", function () {
+                                clearTimeout(timeout);
+                                resolve();
+                            }, { once: true });
+                        });
+                    }
+                    if (navigator.serviceWorker.controller || (await navigator.serviceWorker.ready)) {
+                        swReady = true;
+                    }
+                } catch (err) {
+                    console.warn("Service worker registration failed:", err);
+                }
+                updateBadge();
+            }
+
+            document.querySelectorAll(".preset-btn").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    fibInput.value = btn.getAttribute("data-val");
+                });
+            });
+            startBtn.addEventListener("click", startCalculation);
+            cancelBtn.addEventListener("click", cancelCalculation);
+            runTestsBtn.addEventListener("click", runTests);
+            window.addEventListener("online", updateBadge);
+            window.addEventListener("offline", updateBadge);
+            updateBadge();
+            registerServiceWorker();
+        })();
+    </script>
+</body>
+</html>
